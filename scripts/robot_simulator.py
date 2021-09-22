@@ -8,7 +8,7 @@ from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand
 
 from cheetahgym.systems.pybullet_system import PyBulletSystem
 from cheetahgym.data_types.low_level_types import LowLevelCmd
-from cheetahdeploy.evaluations.evaluation_utils import load_cfg
+from cheetahdeploy.evaluation.evaluation_utils import load_cfg
 
 class SimulatedRobot():
     """
@@ -22,13 +22,15 @@ class SimulatedRobot():
         self._gui = gui
         self._fix_body = fix_body
 
+
         self.gc_init = np.array(
             [0.0, 0.0, 0.30, 1.0, 0.0, 0.0, 0.0, 0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0,
              -0.8, 1.6, ])
 
         if self._simulator_name == "PYBULLET":
             cfg = load_cfg() # TODO: enable specification of config file!
-            self.simulator = PybulletSystem(cfg, gui=self._gui, mpc_controller=None,
+            #cfg = None
+            self.simulator = PyBulletSystem(cfg.alg, gui=self._gui, mpc_controller=None,
                                                 initial_coordinates=self.gc_init, fix_body=self._fix_body)
             self.low_level_cmd = LowLevelCmd()
             # set default low-level command for standing pose
@@ -71,7 +73,7 @@ class SimulatedRobot():
 
 if __name__ == '__main__':
     rospy.init_node('SimulatedRobot', anonymous=True)
-    r = rospy.rate(500)
+    r = rospy.Rate(500)
     robot = SimulatedRobot(gui=True)
     while not rospy.is_shutdown():
         robot.step_simulation()

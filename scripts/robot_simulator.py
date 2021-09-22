@@ -3,12 +3,18 @@
 #import imutils
 import numpy as np
 import rospy
+from cv_bridge import CvBridge
+import cv2
 
-from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand
+from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand, ImageRequest
+import sensor_msgs.msg
 
 from cheetahgym.systems.pybullet_system import PyBulletSystem
 from cheetahgym.data_types.low_level_types import LowLevelCmd
 from cheetahdeploy.evaluation.evaluation_utils import load_cfg
+from cheetahgym.data_types.camera_parameters import cameraParameters
+
+
 
 class SimulatedRobot():
     """
@@ -22,16 +28,27 @@ class SimulatedRobot():
         self._gui = gui
         self._fix_body = fix_body
 
+        self.bridge = CvBridge()
+
 
         self.gc_init = np.array(
             [0.0, 0.0, 0.30, 1.0, 0.0, 0.0, 0.0, 0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0,
              -0.8, 1.6, ])
 
         if self._simulator_name == "PYBULLET":
-            cfg = load_cfg() # TODO: enable specification of config file!
+            cfg = load_cfg().alg # TODO: enable specification of config file!
+            cfg.use_egl = True
             #cfg = None
-            self.simulator = PyBulletSystem(cfg.alg, gui=self._gui, mpc_controller=None,
+            self.simulator = PyBulletSystem(cfg, gui=self._gui, mpc_controller=None,
                                                 initial_coordinates=self.gc_init, fix_body=self._fix_body)
+
+            self.camera_params = cameraParameters(width=cfg.depth_cam_width, height=cfg.depth_cam_height, 
+                                x=cfg.depth_cam_x, y=cfg.depth_cam_y, z=cfg.depth_cam_z, 
+                                roll=cfg.depth_cam_roll, pitch=cfg.depth_cam_pitch, yaw=cfg.depth_cam_yaw, 
+                                fov=cfg.depth_cam_fov, aspect=cfg.depth_cam_aspect, 
+                                nearVal=cfg.depth_cam_nearVal, farVal=cfg.depth_cam_farVal,
+                                cam_pose_std=cfg.cam_pose_std, cam_rpy_std=cfg.cam_rpy_std)
+
             self.low_level_cmd = LowLevelCmd()
             # set default low-level command for standing pose
             self.low_level_cmd.p_targets = [0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0, -0.8, 1.6]
@@ -42,6 +59,12 @@ class SimulatedRobot():
 
         self.state_pub = rospy.Publisher("robot_state",
             RobotState, queue_size=10)
+
+        self.camera_pub = rospy.Publisher("simulated_image",
+            sensor_msgs.msg.Image, queue_size=10)
+
+        self.action_sub = rospy.Subscriber("camera_request",
+            ImageRequest, self.camera_callback)
 
         self.action_sub = rospy.Subscriber("pd_torque_command",
             PDPlusTorqueCommand, self.action_callback)
@@ -55,7 +78,14 @@ class SimulatedRobot():
         self.low_level_cmd.p_gains = pd_plus_torque_msg.p_gains
         self.low_level_cmd.v_gains = pd_plus_torque_msg.v_gains
         self.low_level_cmd.ff_torque = pd_plus_torque_msg.ff_torque
-        
+
+    def camera_callback(self, camera_request_msg):
+        depth, rgb = self.simulator.render_camera_image(self.camera_params)
+
+        #cv2_depth = cv2.fromarray(depth)
+
+        depth_msg = self.bridge.cv2_to_imgmsg(depth, encoding="passthrough")
+        self.camera_pub.publish(depth_msg)
 
     def step_simulation(self):
         self.observation = self.simulator.step_state_low_level(self.low_level_cmd, loop_count=1)

@@ -1,0 +1,15 @@
+float32[] vel_cmd
+float32[] vel_rpy_cmd
+float32[] fp_rel_cmd
+float32[] fh_rel_cmd
+float32 footswing_height
+int32[] offsets_smoothed
+int32[] durations_smoothed
+int32[] mpc_table_update
+int32[] vel_table_update
+int32[] vel_rpy_table_update
+int32[] iterations_table_update
+int32 planningHorizon
+int32 adaptationHorizon
+int32 adaptationSteps
+int32 iterationsBetweenMPC

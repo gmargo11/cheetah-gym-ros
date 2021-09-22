@@ -56,6 +56,7 @@ find_package(catkin REQUIRED COMPONENTS
    PDPlusTorqueCommand.msg
    RobotState.msg
    ImageRequest.msg
+   TrajParams.msg
 )
 
 ## Generate services in the 'srv' folder

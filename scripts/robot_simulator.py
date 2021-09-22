@@ -22,7 +22,7 @@ class SimulatedRobot():
     Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
     Publishes to: /relative_cone_px (ConeLocationPixel) : the coordinates of the cone in the image frame (units are pixels).
     """
-    def __init__(self, simulator_name="PYBULLET", gui=False, fix_body=False):
+    def __init__(self, simulator_name="PYBULLET", cfg=None, gui=False, fix_body=False):
         
         self._simulator_name = simulator_name
         self._gui = gui
@@ -35,8 +35,10 @@ class SimulatedRobot():
             [0.0, 0.0, 0.30, 1.0, 0.0, 0.0, 0.0, 0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0,
              -0.8, 1.6, ])
 
-        if self._simulator_name == "PYBULLET":
+        if cfg is None:
             cfg = load_cfg().alg # TODO: enable specification of config file!
+
+        if self._simulator_name == "PYBULLET":
             cfg.use_egl = True
             #cfg = None
             self.simulator = PyBulletSystem(cfg, gui=self._gui, mpc_controller=None,

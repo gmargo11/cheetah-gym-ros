@@ -6,5 +6,8 @@
   <node pkg="cheetah_gym_ros" name="realsense_simulator" type="realsense_simulator.py" output="screen">
   	<!-- <param name="drive_topic" value="/drive" /> -->
   </node>
+  <node pkg="cheetah_gym_ros" name="mpc_controller" type="mpc_controller.py" output="screen">
+  	<!-- <param name="drive_topic" value="/drive" /> -->
+  </node>
 
 </launch>

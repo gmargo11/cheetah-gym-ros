@@ -32,9 +32,9 @@ def get_mpc_table(offsets, durations, gait_cycle_len=10):
 
 class StaticGaitServer():
     """
-    A class for applying your cone detection algorithms to the real robot.
-    Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
-    Publishes to: /relative_cone_px (ConeLocationPixel) : the coordinates of the cone in the image frame (units are pixels).
+    A class for sending a fixed gait pattern to the robot.
+    Subscribes to: /robot_state (RobotState) : the body and joint state of the robot.
+    Publishes to: /traj_params (TrajParams) : the parameters of the desired robot trajectory.
     """
     def __init__(self, iterationsBetweenMPC=17):
 

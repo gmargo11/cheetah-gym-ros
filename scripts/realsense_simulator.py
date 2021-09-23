@@ -9,9 +9,10 @@ import sensor_msgs.msg
 
 class SimulatedCamera():
     """
-    A class for applying your cone detection algorithms to the real robot.
-    Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
-    Publishes to: /relative_cone_px (ConeLocationPixel) : the coordinates of the cone in the image frame (units are pixels).
+    A class for asynchronously querying the camera image.
+    Subscribes to: /simulated_image (Image) : the depth image from the onboard camera.
+    Publishes to: /camera_request (ImageRequest) : Asynchronously queries an image from the simulator.
+    Publishes to: /camera_image (Image) : the depth image from the onboard camera.
     """
     def __init__(self):
         

@@ -18,11 +18,11 @@ from cheetahgym.utils.rotation_utils import get_rotation_matrix_from_quaternion,
 
 
 
-class PolicyServer():
+class IsaacPolicyServer():
     """
-    A class for applying your cone detection algorithms to the real robot.
-    Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
-    Publishes to: /relative_cone_px (ConeLocationPixel) : the coordinates of the cone in the image frame (units are pixels).
+    A class for performing inference with a learned joint-space policy.
+    Subscribes to: /robot_state (RobotState) : the body and joint state of the robot.
+    Publishes to: /pd_torque_command (PDPlusTorqueCommand) : the commanded pd targets, gains, and feedforward torque.
     """
     def __init__(self, cfg=None):
         
@@ -113,9 +113,9 @@ class PolicyServer():
 
 
 if __name__ == '__main__':
-    rospy.init_node('PolicyServer', anonymous=True)
+    rospy.init_node('IsaacPolicyServer', anonymous=True)
     r = rospy.Rate(500)
-    mpc_ctrl = PolicyServer()
+    isaac_policy_server = IsaacPolicyServer()
     while not rospy.is_shutdown():
-        mpc_ctrl.infer()
+        isaac_policy_server.infer()
         r.sleep()

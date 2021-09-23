@@ -1,0 +1,20 @@
+<launch>
+
+  <!-- Configuration file and saved policy -->
+  <param name="model_path" value="/data/jaynes_runs/corl_runs/mpc/final_batch/varpronk/vel_control_True/perturbations_False/gap_width_30/steps_1/episode_steps_500/clip_mpc_actions_False/iterationsBetweenMPC_18/bodyvel_range_0.3/bodyvel_center_0.5/nonzero_foot_adaptation_False/observe_state_True/only_observe_body_state_False/heightmaps/seed_5/CheetahMPCEnv-v0/default/seed_0/" />
+
+
+  <!-- Simulation infrastructure -->
+  <node pkg="cheetah_gym_ros" name="robot_simulator" type="robot_simulator.py" output="screen" />
+  <node pkg="cheetah_gym_ros" name="map_publisher" type="map_publisher.py" output="screen" />
+
+
+  <!-- Control Hierarchy 
+  <node pkg="cheetah_gym_ros" name="easyrl_policy_server" type="easyrl_policy_server.py" output="screen" />
+  <node pkg="cheetah_gym_ros" name="mpc_controller" type="mpc_controller.py" output="screen" />
+  -->
+
+  <!-- Safety Controller -->
+  <node pkg="cheetah_gym_ros" name="safety_controller" type="safety_controller.py" output="screen" />
+  
+</launch>

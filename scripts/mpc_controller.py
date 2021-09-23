@@ -20,14 +20,14 @@ from cheetahgym.utils.rotation_utils import get_rotation_matrix_from_quaternion,
 
 class MPCController():
     """
-    A class for applying your cone detection algorithms to the real robot.
-    Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
-    Publishes to: /relative_cone_px (ConeLocationPixel) : the coordinates of the cone in the image frame (units are pixels).
+    A class for tracking a parameterized gait using model-predictive control.
+    Subscribes to: /robot_state (RobotState) : the body and joint state of the robot.
+    Subscribes to: /traj_params (TrajParams) : the parameters of the desired robot trajectory.
+    Publishes to: /pd_torque_command (PDPlusTorqueCommand) : the commanded pd targets, gains, and feedforward torque.
     """
-    def __init__(self, cfg=None):
+    def __init__(self):
         
-        if cfg is None:
-            cfg = load_cfg().alg
+        cfg = load_cfg(rospy.get_param('model_path')).alg
 
         from cheetahgym.utils.mpc_wbc_bindings import RSCheetahControllerV1
         self.mpc_controller = RSCheetahControllerV1(robot_filename="/workspace/cheetah-gym/cheetahgym/config/quadruped-parameters.yaml",

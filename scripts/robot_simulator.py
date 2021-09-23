@@ -18,9 +18,12 @@ from cheetahgym.data_types.camera_parameters import cameraParameters
 
 class SimulatedRobot():
     """
-    A class for applying your cone detection algorithms to the real robot.
-    Subscribes to: /zed/zed_node/rgb/image_rect_color (Image) : the live RGB image from the onboard ZED camera.
-    Publishes to: /relative_cone_px (ConeLocationPixel) : the coordinates of the cone in the image frame (units are pixels).
+    A class for simulating the robot dynamics in PyBullet.
+    Subscribes to: /pd_torque_command (PDPlusTorqueCommand) : the commanded pd targets, gains, and feedforward torque.
+    Subscribes to: /estop_signal (EmergencyStopInfo) : if a safety condition is violated, a message here reports its ID#
+    Subscribes to: /camera_request (ImageRequest) : Asynchronously queries an image from the simulator.
+    Publishes to: /robot_state (RobotState) : the body and joint state of the robot.
+    Publishes to: /simulated_image (Image) : the depth image from the onboard camera.
     """
     def __init__(self, simulator_name="PYBULLET", cfg=None, gui=False, fix_body=False):
         
@@ -37,8 +40,7 @@ class SimulatedRobot():
             [0.0, 0.0, 0.30, 1.0, 0.0, 0.0, 0.0, 0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0,
              -0.8, 1.6, ])
 
-        if cfg is None:
-            cfg = load_cfg().alg # TODO: enable specification of config file!
+        cfg = load_cfg(rospy.get_param('model_path')).alg
 
         if self._simulator_name == "PYBULLET":
             cfg.use_egl = True

@@ -58,6 +58,7 @@ find_package(catkin REQUIRED COMPONENTS
    ImageRequest.msg
    TrajParams.msg
    EmergencyStopInfo.msg
+   TerrainHeightmap.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -78,6 +79,7 @@ find_package(catkin REQUIRED COMPONENTS
 generate_messages(
    DEPENDENCIES
    std_msgs
+   sensor_msgs
 #   ackermann_msgs#   geometry_msgs#   sensor_msgs#   std_msgs#   visualization_msgs
 )
 

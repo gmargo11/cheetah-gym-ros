@@ -3,6 +3,9 @@
   <node pkg="cheetah_gym_ros" name="robot_simulator" type="robot_simulator.py" output="screen">
   	<!-- <param name="drive_topic" value="/drive" /> -->
   </node>
+  <node pkg="cheetah_gym_ros" name="safety_controller" type="safety_controller.py" output="screen">
+    <!-- <param name="drive_topic" value="/drive" /> -->
+  </node>
   <node pkg="cheetah_gym_ros" name="realsense_simulator" type="realsense_simulator.py" output="screen">
   	<!-- <param name="drive_topic" value="/drive" /> -->
   </node>

@@ -6,7 +6,7 @@ import rospy
 from cv_bridge import CvBridge
 import cv2
 
-from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand, ImageRequest
+from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand, ImageRequest, EmergencyStopInfo
 import sensor_msgs.msg
 
 from cheetahgym.systems.pybullet_system import PyBulletSystem
@@ -27,6 +27,8 @@ class SimulatedRobot():
         self._simulator_name = simulator_name
         self._gui = gui
         self._fix_body = fix_body
+
+        self.ESTOP = False
 
         self.bridge = CvBridge()
 
@@ -53,11 +55,7 @@ class SimulatedRobot():
 
             self.low_level_cmd = LowLevelCmd()
             # set default low-level command for standing pose
-            self.low_level_cmd.p_targets = [0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0, -0.8, 1.6]
-            self.low_level_cmd.v_targets = [0.0] * 12
-            self.low_level_cmd.p_gains = [40] * 12
-            self.low_level_cmd.v_gains = [1] * 12
-            self.low_level_cmd.ff_torque = [0] * 12
+            self.set_standing_targets()
 
         self.state_pub = rospy.Publisher("robot_state",
             RobotState, queue_size=10)
@@ -65,15 +63,20 @@ class SimulatedRobot():
         self.camera_pub = rospy.Publisher("simulated_image",
             sensor_msgs.msg.Image, queue_size=10)
 
-        self.action_sub = rospy.Subscriber("camera_request",
+        self.cam_request_sub = rospy.Subscriber("camera_request",
             ImageRequest, self.camera_callback)
 
         self.action_sub = rospy.Subscriber("pd_torque_command",
             PDPlusTorqueCommand, self.action_callback)
 
+        self.estop_sub = rospy.Subscriber("estop_signal",
+            EmergencyStopInfo, self.emergency_stop_callback)
 
 
     def action_callback(self, pd_plus_torque_msg):
+
+        if self.ESTOP:
+            return
 
         self.low_level_cmd.p_targets = pd_plus_torque_msg.p_targets
         self.low_level_cmd.v_targets = pd_plus_torque_msg.v_targets
@@ -89,6 +92,10 @@ class SimulatedRobot():
         depth_msg = self.bridge.cv2_to_imgmsg(depth, encoding="passthrough")
         self.camera_pub.publish(depth_msg)
 
+    def emergency_stop_callback(self, estop_info_msg):
+        self.ESTOP = True
+        self.set_zero_torque()
+
     def step_simulation(self):
         self.observation = self.simulator.step_state_low_level(self.low_level_cmd, loop_count=1)
 
@@ -101,6 +108,20 @@ class SimulatedRobot():
         state_msg.joint_vel = self.observation.joint_vel
 
         self.state_pub.publish(state_msg)
+
+    def set_standing_targets(self):
+        self.low_level_cmd.p_targets = [0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0, -0.8, 1.6]
+        self.low_level_cmd.v_targets = [0.0] * 12
+        self.low_level_cmd.p_gains = [40] * 12
+        self.low_level_cmd.v_gains = [1] * 12
+        self.low_level_cmd.ff_torque = [0] * 12
+
+    def set_zero_torque(self):
+        self.low_level_cmd.p_targets = [0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0, -0.8, 1.6]
+        self.low_level_cmd.v_targets = [0.0] * 12
+        self.low_level_cmd.p_gains = [0] * 12
+        self.low_level_cmd.v_gains = [0] * 12
+        self.low_level_cmd.ff_torque = [0] * 12
 
 
 if __name__ == '__main__':

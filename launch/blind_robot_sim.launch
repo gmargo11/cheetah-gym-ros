@@ -1,0 +1,10 @@
+<launch>
+  <!-- Launch the parking controller in simulation. Launches controller node, and interactive marker node -->
+  <node pkg="cheetah_gym_ros" name="robot_simulator" type="robot_simulator.py" output="screen">
+  	<!-- <param name="drive_topic" value="/drive" /> -->
+  </node>
+  <node pkg="cheetah_gym_ros" name="mpc_controller" type="mpc_controller.py" output="screen">
+  	<!-- <param name="drive_topic" value="/drive" /> -->
+  </node>
+
+</launch>

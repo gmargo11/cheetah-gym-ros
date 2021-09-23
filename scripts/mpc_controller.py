@@ -46,7 +46,7 @@ class MPCController():
         # default command: stand still at the origin
         self.mpc_level_cmd.vel_cmd = np.zeros(3)
         self.mpc_level_cmd.vel_rpy_cmd = np.zeros(3)
-        self.mpc_level_cmd.fp_rel_cmd = np.zeros(4)
+        self.mpc_level_cmd.fp_rel_cmd = np.zeros(8)
         self.mpc_level_cmd.fh_rel_cmd = np.zeros(4)
         self.mpc_level_cmd.footswing_height = 0.06
         self.mpc_level_cmd.offsets_smoothed = np.zeros(4).astype(int)
@@ -54,11 +54,14 @@ class MPCController():
         self.mpc_level_cmd.mpc_table_update = np.ones((40, 1)).astype(int)
         self.mpc_level_cmd.vel_table_update = np.zeros((30, 1))
         self.mpc_level_cmd.vel_rpy_table_update = np.zeros((30, 1))
-        self.mpc_level_cmd.iterations_table_update = (np.ones((10, 1))*13).astype(int)
+        self.mpc_level_cmd.iterations_table_update = (np.ones(10)*13).astype(int)
         self.mpc_level_cmd.planningHorizon = 10
         self.mpc_level_cmd.adaptationHorizon = 10
         self.mpc_level_cmd.adaptationSteps = 2
         self.mpc_level_cmd.iterationsBetweenMPC = 13
+
+        # wait for first state info before running MPC
+        self.robot_state_is_initialized = False
 
         self.pd_torque_pub = rospy.Publisher("pd_torque_command",
             PDPlusTorqueCommand, queue_size=10)
@@ -70,28 +73,23 @@ class MPCController():
             TrajParams, self.params_callback)
 
     def robot_state_callback(self, robot_state_msg):
-        state_msg = RobotState()
-        state_msg.body_pos = self.observation.body_pos
-        state_msg.body_rpy = self.observation.body_rpy
-        state_msg.body_linear_vel = self.observation.body_linear_vel
-        state_msg.body_angular_vel = self.observation.body_angular_vel
-        state_msg.joint_pos = self.observation.joint_pos
-        state_msg.joint_vel = self.observation.joint_vel
         
         self.mpc_level_state.body_pos = robot_state_msg.body_pos
         self.mpc_level_state.body_rpy = robot_state_msg.body_rpy
         self.mpc_level_state.body_linear_vel = robot_state_msg.body_linear_vel
         self.mpc_level_state.body_angular_vel = robot_state_msg.body_angular_vel
         self.mpc_level_state.body_linear_accel = np.zeros(3) # ??
-        self.mpc_level_state.joint_pos = robot_state_msg.joint_pos
-        self.mpc_level_state.joint_vel = robot_state_msg.joint_vel
+        self.mpc_level_state.joint_pos = np.array(robot_state_msg.joint_pos)
+        self.mpc_level_state.joint_vel = np.array(robot_state_msg.joint_vel)
 
         self.low_level_state.body_pos = robot_state_msg.body_pos
         self.low_level_state.body_rpy = robot_state_msg.body_rpy
         self.low_level_state.body_linear_vel = robot_state_msg.body_linear_vel
         self.low_level_state.body_angular_vel = robot_state_msg.body_angular_vel
-        self.low_level_state.joint_pos = robot_state_msg.joint_pos
-        self.low_level_state.joint_vel = robot_state_msg.joint_vel
+        self.low_level_state.joint_pos = np.array(robot_state_msg.joint_pos)
+        self.low_level_state.joint_vel = np.array(robot_state_msg.joint_vel)
+
+        self.robot_state_is_initialized = True
 
         
     def params_callback(self, traj_params_msg):
@@ -114,11 +112,13 @@ class MPCController():
 
 
     def step_mpc_controller(self):
+        if not self.robot_state_is_initialized:
+            return
+
         rot_w_b_cur = inversion(get_rotation_matrix_from_rpy(self.low_level_state.body_rpy))
 
         self.mpc_controller.nmpc.set_accept_update()
-        print("STEP")
-        low_level_cmd = self.mpc_controller.step_with_mpc_table(self.mpc_level_cmd, self.mpc_level_state, self.low_level_state, rot_w_b_cur, override_forces=False)
+        low_level_cmd = self.mpc_controller.step_with_mpc_table(self.mpc_level_cmd, self.mpc_level_state, self.low_level_state, rot_w_b_cur, override_forces=None)
 
         pd_torque_cmd = PDPlusTorqueCommand()
         pd_torque_cmd.p_targets = low_level_cmd.p_targets

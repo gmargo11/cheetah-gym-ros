@@ -1,4 +1,7 @@
+
+
 <launch>
+  <param name="model_path" value="/data/jaynes_runs/corl_runs/mpc/final_batch/varpronk/vel_control_True/perturbations_False/gap_width_30/steps_1/episode_steps_500/clip_mpc_actions_False/iterationsBetweenMPC_18/bodyvel_range_0.3/bodyvel_center_0.5/nonzero_foot_adaptation_False/observe_state_True/only_observe_body_state_False/heightmaps/seed_5/CheetahMPCEnv-v0/default/seed_0/" />
   <!-- Launch the parking controller in simulation. Launches controller node, and interactive marker node -->
   <node pkg="cheetah_gym_ros" name="robot_simulator" type="robot_simulator.py" output="screen">
   	<!-- <param name="drive_topic" value="/drive" /> -->

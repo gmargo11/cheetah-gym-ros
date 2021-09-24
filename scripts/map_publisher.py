@@ -54,7 +54,8 @@ class MapPublisher():
 
     def publish_heightmap(self):
         heightmap = TerrainHeightmap()
-        heightmap.heightfield = self.bridge.cv2_to_imgmsg(self.heightmap_sensor.heightmap_array, encoding="passthrough")
+        #heightmap.heightfield = self.bridge.cv2_to_imgmsg(self.heightmap_sensor.heightmap_array, encoding="passthrough")
+        heightmap.heightfield = self.heightmap_sensor.heightmap_array.flatten()
         heightmap.n_rows = self.heightmap_sensor.heightmap_array.shape[0]
         heightmap.n_cols = self.heightmap_sensor.heightmap_array.shape[1]
         heightmap.resolution_x = self.heightmap_sensor.hmap_cfg["resolution"]
@@ -80,7 +81,8 @@ class MapPublisher():
                                                         im_y_resolution=self.cfg.im_y_resolution,
                                                         cfg=None)
 
-        local_heightfield.heightfield = self.bridge.cv2_to_imgmsg(hf, encoding="passthrough")
+        #local_heightfield.heightfield = self.bridge.cv2_to_imgmsg(hf, encoding="passthrough")
+        local_heightfield.heightfield = hf.flatten()
         local_heightfield.n_rows = hf.shape[0]
         local_heightfield.n_cols = hf.shape[1]
         local_heightfield.resolution_x = self.heightmap_sensor.hmap_cfg["resolution"]

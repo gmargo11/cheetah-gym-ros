@@ -43,7 +43,7 @@ class PolicyServer():
         self.load_policy(rospy.get_param('model_path'))
 
         self.robot_state_sub = rospy.Subscriber("robot_state",
-            RobotState, self.robot_state_callback)\
+            RobotState, self.robot_state_callback)
 
         self.camera_sub = rospy.Subscriber("camera_image",
             sensor_msgs.msg.Image, self.camera_image_callback)
@@ -74,7 +74,7 @@ class PolicyServer():
 
     def local_heightfield_callback(self, local_heightfield_msg):
 
-        self.camera_image = local_heightfield_msg.heightfield
+        self.camera_image = np.array(local_heightfield_msg.heightfield).reshape(1, local_heightfield_msg.n_rows, local_heightfield_msg.n_cols)
         
     def publish_traj_params(self):
         if not self.robot_state_is_initialized:
@@ -163,7 +163,7 @@ class PolicyServer():
             self.action, self.action_info = ret
 
 
-        self.env.update_cmd(self.action[0])
+        self.env.update_cmd(self.action[0], mpc_progress=self.mpc_progress)
         self.prev_mpc_action = copy.deepcopy(self.env.mpc_level_cmd)
 
         self.mpc_progress += 1
@@ -174,7 +174,8 @@ class PolicyServer():
 
 if __name__ == '__main__':
     rospy.init_node('PolicyServer', anonymous=True)
-    r = rospy.Rate(500)
+    iterationsBetweenMPC = 17
+    r = rospy.Rate(500./iterationsBetweenMPC)
     policy_server = PolicyServer()
     while not rospy.is_shutdown():
         policy_server.infer()

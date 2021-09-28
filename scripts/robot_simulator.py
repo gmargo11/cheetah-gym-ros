@@ -7,7 +7,7 @@ from cv_bridge import CvBridge
 import cv2
 import time
 
-from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand, ImageRequest, EmergencyStopInfo
+from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand, ImageRequest, EmergencyStopInfo, TerrainHeightmap
 import sensor_msgs.msg
 from rosgraph_msgs.msg import Clock
 
@@ -82,6 +82,9 @@ class SimulatedRobot():
         self.estop_sub = rospy.Subscriber("estop_signal",
             EmergencyStopInfo, self.emergency_stop_callback)
 
+        self.terrain_sub = rospy.Subscriber("terrain_map",
+            TerrainHeightmap, self.terrain_map_callback)
+
         # if not self._realtime:
         #     time.sleep(0.1)
         #     self.step_simulation()
@@ -113,6 +116,10 @@ class SimulatedRobot():
         self.ESTOP = True
         print(f"ESTOP code {estop_info_msg.condition}")
         self.set_zero_torque()
+
+    def terrain_map_callback(self, terrain_map_msg):
+        hmap_array = np.array(terrain_map_msg.heightfield).reshape(terrain_map_msg.n_rows, terrain_map_msg.n_cols).T
+        self.simulator.add_heightmap_array(hmap_array, body_pos=self.simulator.body_pos, resolution=terrain_map_msg.resolution_x)
 
     def step_simulation(self):
         self.observation = self.simulator.step_state_low_level(self.low_level_cmd, loop_count=1)

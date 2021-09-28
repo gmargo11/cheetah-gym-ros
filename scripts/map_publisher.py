@@ -89,6 +89,8 @@ class MapPublisher():
         local_heightfield.resolution_y = self.heightmap_sensor.hmap_cfg["resolution"]
         local_heightfield.resolution_z = 1.
 
+        local_heightfield.heightfield_image = self.bridge.cv2_to_imgmsg(hf*255, encoding="passthrough")
+
         self.local_map_pub.publish(local_heightfield)
 
 

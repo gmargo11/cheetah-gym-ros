@@ -5,9 +5,11 @@ import numpy as np
 import rospy
 from cv_bridge import CvBridge
 import cv2
+import time
 
 from cheetah_gym_ros.msg import RobotState, PDPlusTorqueCommand, ImageRequest, EmergencyStopInfo
 import sensor_msgs.msg
+from rosgraph_msgs.msg import Clock
 
 from cheetahgym.systems.pybullet_system import PyBulletSystem
 from cheetahgym.data_types.low_level_types import LowLevelCmd
@@ -25,11 +27,15 @@ class SimulatedRobot():
     Publishes to: /robot_state (RobotState) : the body and joint state of the robot.
     Publishes to: /simulated_image (Image) : the depth image from the onboard camera.
     """
-    def __init__(self, simulator_name="PYBULLET", cfg=None, gui=False, fix_body=False):
+    def __init__(self, simulator_name="PYBULLET", cfg=None, gui=False, fix_body=False, realtime=False):
         
         self._simulator_name = simulator_name
         self._gui = gui
         self._fix_body = fix_body
+        self._realtime = realtime
+
+        self.timestep = 1./500.
+        self.num_steps = 0
 
         self.ESTOP = False
 
@@ -65,6 +71,8 @@ class SimulatedRobot():
         self.camera_pub = rospy.Publisher("simulated_image",
             sensor_msgs.msg.Image, queue_size=10)
 
+        self.sim_clock_pub = rospy.Publisher("clock", Clock, queue_size=10)
+
         self.cam_request_sub = rospy.Subscriber("camera_request",
             ImageRequest, self.camera_callback)
 
@@ -73,6 +81,10 @@ class SimulatedRobot():
 
         self.estop_sub = rospy.Subscriber("estop_signal",
             EmergencyStopInfo, self.emergency_stop_callback)
+
+        # if not self._realtime:
+        #     time.sleep(0.1)
+        #     self.step_simulation()
 
 
     def action_callback(self, pd_plus_torque_msg):
@@ -86,6 +98,9 @@ class SimulatedRobot():
         self.low_level_cmd.v_gains = pd_plus_torque_msg.v_gains
         self.low_level_cmd.ff_torque = pd_plus_torque_msg.ff_torque
 
+        #if not self._realtime:
+        #    self.step_simulation()
+
     def camera_callback(self, camera_request_msg):
         depth, rgb = self.simulator.render_camera_image(self.camera_params)
 
@@ -96,6 +111,7 @@ class SimulatedRobot():
 
     def emergency_stop_callback(self, estop_info_msg):
         self.ESTOP = True
+        print(f"ESTOP code {estop_info_msg.condition}")
         self.set_zero_torque()
 
     def step_simulation(self):
@@ -109,7 +125,15 @@ class SimulatedRobot():
         state_msg.joint_pos = self.observation.joint_pos
         state_msg.joint_vel = self.observation.joint_vel
 
+        # increment simulation time
+        self.num_steps += 1
+        sim_clock = Clock()
+        sim_clock.clock = rospy.Time.from_sec(self.num_steps * self.timestep)
+        self.sim_clock_pub.publish(sim_clock)
+
         self.state_pub.publish(state_msg)
+
+
 
     def set_standing_targets(self):
         self.low_level_cmd.p_targets = [0.0, -0.80, 1.6, 0.0, -0.80, 1.6, 0.0, -0.8, 1.6, 0.0, -0.8, 1.6]
@@ -128,8 +152,11 @@ class SimulatedRobot():
 
 if __name__ == '__main__':
     rospy.init_node('SimulatedRobot', anonymous=True)
-    r = rospy.Rate(500)
-    robot = SimulatedRobot(gui=True)
+    #r = rospy.Rate(500)
+    robot = SimulatedRobot(gui=True, realtime=False)
+
     while not rospy.is_shutdown():
         robot.step_simulation()
-        r.sleep()
+        #r.sleep()
+        #time.sleep(0.01)
+

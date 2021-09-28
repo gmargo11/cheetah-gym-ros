@@ -44,7 +44,7 @@ class SafetyController():
 
     def action_callback(self, pd_plus_torque_msg):
 
-        MAX_SAFE_TORQUE = 20
+        MAX_SAFE_TORQUE = 40
 
         # commanded torque unsafe
         if np.max(np.abs(np.array(pd_plus_torque_msg.ff_torque))) > MAX_SAFE_TORQUE:
